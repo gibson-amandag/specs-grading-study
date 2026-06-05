@@ -1,0 +1,21 @@
+#Replace paths with your paths on your computer. Relative to project root
+#Change name of this file to .Renviron
+
+DATA_FOLDER=""
+OUTPUT_FOLDER=""
+
+# Expecting excel file
+FILE_NAME="fileName.xlsx"
+
+FILE_PREFIX=""
+
+# type of images to save for plots. 
+# png, svg, or pdf, for example
+PLOT_OUTPUT_FORMAT="png"
+
+#save individual plot files?
+SAVE_PLOTS=TRUE
+
+PATH="${RTOOLS40_HOME}\usr\bin;${PATH}"
+
+COMP_TYPE="mac"
