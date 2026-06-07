@@ -1,0 +1,961 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+source("./01-scripts/01-set-up.R")
+```
+
+```{r}
+source(file.path(scriptsFolder, "02-load-data-file.R"))
+```
+
+```{r}
+source(file.path(scriptsFolder, "02-process-data.R"))
+```
+
+
+
+
+```{r}
+combinedResponses
+questions_df
+phraseTable_df
+scaleScores
+```
+
+```{r}
+scaleScores %>%
+  arrange(
+    MasteryGoal_score
+  ) %>%
+  filter(
+    sectionID == "RU03"
+  )
+```
+
+
+
+
+# Growth Mindset
+No effect
+```{r}
+scaleScores %>%
+  filter(
+    !is.na(Growth_score)
+  ) %>%
+  scatterPlot_general(
+    xVar = Time
+    , yVar = Growth_score
+    , xLab = "time"
+    , yLab = "Growth Mindset"
+    , fillVar = sectionID
+    , fillLimits = c("RU02", "RU03")
+    , fillValues = c("lightblue", "magenta")
+    # , shapeVar = labSection
+  ) +
+  facet_wrap(
+    ~ sectionID
+  ) +
+  jitterGeom_shapeAes(
+    shape = labSection
+  ) +
+  scale_shape_manual(
+    limits = c("Other", "RU03")
+    , values = c(21, 23)
+  # ) +
+  # geom_point(
+  #   aes(group = (ID))
+  #   , position = position_dodge2(width = 0.2)
+  #   , shape = 21
+  # ) +
+  # geom_line(
+  #   aes(group = ID)
+  #   , position = position_dodge2(width = 0.2)
+  #   , alpha = 0.2
+  )
+```
+
+```{r}
+mixed(
+  Growth_score ~ sectionID * Time + (1|ID)
+  , data = scaleScores
+  , method = "KR"
+)
+```
+
+# Fixed Mindset
+No effect
+```{r}
+scaleScores %>%
+  filter(
+    !is.na(Fixed_score)
+  ) %>%
+  scatterPlot_general(
+    xVar = Time
+    , yVar = Fixed_score
+    , xLab = "time"
+    , yLab = "Fixed Mindset"
+    , fillVar = sectionID
+    , fillLimits = c("RU02", "RU03")
+    , fillValues = c("lightblue", "magenta")
+  ) +
+  facet_wrap(
+    ~ sectionID
+  ) +
+  jitterGeom_shapeAes(
+    shape = labSection
+  ) +
+  scale_shape_manual(
+    limits = c("Other", "RU03")
+    , values = c(21, 23)
+  # ) +
+  # geom_point(
+  #   aes(group = (ID))
+  #   , position = position_dodge2(width = 0.2)
+  #   , shape = 21
+  # ) +
+  # geom_line(
+  #   aes(group = ID)
+  #   , position = position_dodge2(width = 0.2)
+  #   , alpha = 0.2
+  )
+```
+
+```{r}
+mixed(
+  Fixed_score ~ sectionID * Time + (1|ID)
+  , data = scaleScores
+  , method = "KR"
+)
+```
+
+# Scientific Efficacy
+No effect
+```{r}
+scaleScores %>%
+  filter(
+    !is.na(SciEfficacy_score)
+  ) %>%
+  scatterPlot_general(
+    xVar = Time
+    , yVar = SciEfficacy_score
+    , xLab = "time"
+    , yLab = "Science Academic Self-Efficacy"
+    , fillVar = sectionID
+    , fillLimits = c("RU02", "RU03")
+    , fillValues = c("lightblue", "magenta")
+  ) +
+  facet_wrap(
+    ~ sectionID
+  ) +
+  jitterGeom_shapeAes(
+    shape = labSection
+  ) +
+  scale_shape_manual(
+    limits = c("Other", "RU03")
+    , values = c(21, 23)
+  # ) +
+  # geom_point(
+  #   aes(group = (ID))
+  #   , position = position_dodge2(width = 0.2)
+  #   , shape = 21
+  # ) +
+  # geom_line(
+  #   aes(group = ID)
+  #   , position = position_dodge2(width = 0.2)
+  #   , alpha = 0.2
+  )
+```
+
+```{r}
+mixed(
+  SciEfficacy_score ~ sectionID * Time + (1|ID)
+  , data = scaleScores
+  , method = "KR"
+)
+```
+
+# Mastery Goals
+Went down in both sections over semester
+```{r}
+scaleScores %>%
+  filter(
+    !is.na(MasteryGoal_score)
+  ) %>%
+  scatterPlot_general(
+    xVar = Time
+    , yVar = MasteryGoal_score
+    , xLab = "time"
+    , yLab = "Mastery Goals"
+    , fillVar = sectionID
+    , fillLimits = c("RU02", "RU03")
+    , fillValues = c("lightblue", "magenta")
+  ) +
+  facet_wrap(
+    ~ sectionID
+  ) +
+  geom_point(
+    aes(
+      group = ID
+    )
+    , position = position_dodge2(width = 0.5)
+    , shape = 21
+  ) +
+  geom_line(
+    aes(group = ID)
+    , position = position_dodge2(width = 0.5)
+    , alpha = 0.2
+  )
+```
+
+```{r}
+mixed(
+  MasteryGoal_score ~ sectionID * Time + (1|ID)
+  , data = scaleScores
+  , method = "KR"
+)
+```
+
+# Mastery Goals - by lab
+Went down in both sections over semester
+```{r}
+scaleScores %>%
+  filter(
+    !is.na(MasteryGoal_score)
+  ) %>%
+  scatterPlot_general(
+    xVar = Time
+    , yVar = MasteryGoal_score
+    , xLab = "time"
+    , yLab = "Mastery Goals"
+    , fillVar = labSection
+    , fillLimits = c("RU02", "RU03")
+    , fillValues = c("lightblue", "magenta")
+  ) +
+  facet_wrap(
+    ~ labSection
+  ) +
+  geom_point(
+    aes(
+      group = ID
+    )
+    , position = position_dodge2(width = 0.5)
+    , shape = 21
+  ) +
+  geom_line(
+    aes(group = ID)
+    , position = position_dodge2(width = 0.5)
+    , alpha = 0.2
+  )
+```
+
+```{r}
+mixed(
+  MasteryGoal_score ~ labSection * Time + (1|ID)
+  , data = scaleScores
+  , method = "KR"
+)
+```
+```{r}
+mixed(
+  MasteryGoal_score ~ sectionID * labSection * Time + (1|ID)
+  , data = scaleScores
+  , method = "KR"
+)
+```
+
+# Performance Goals
+No effect
+```{r}
+scaleScores %>%
+  filter(
+    !is.na(PerformanceGoal_score)
+  ) %>%
+  scatterPlot_general(
+    xVar = Time
+    , yVar = PerformanceGoal_score
+    , xLab = "time"
+    , yLab = "Performance Goals"
+    , fillVar = sectionID
+    , fillLimits = c("RU02", "RU03")
+    , fillValues = c("lightblue", "magenta")
+  ) +
+  facet_wrap(
+    ~ sectionID
+  ) +
+  jitterGeom_shapeAes(
+    shape = labSection
+  ) +
+  scale_shape_manual(
+    limits = c("Other", "RU03")
+    , values = c(21, 23)
+  # ) +
+  # geom_point(
+  #   aes(group = (ID))
+  #   , position = position_dodge2(width = 0.2)
+  #   , shape = 21
+  # ) +
+  # geom_line(
+  #   aes(group = ID)
+  #   , position = position_dodge2(width = 0.2)
+  #   , alpha = 0.2
+  )
+```
+
+```{r}
+mixed(
+  PerformanceGoal_score ~ sectionID * Time + (1|ID)
+  , data = scaleScores
+  , method = "KR"
+)
+```
+
+# Interest
+No effect
+```{r}
+scaleScores %>%
+  filter(
+    !is.na(Interest_score)
+  ) %>%
+  scatterPlot_general(
+    xVar = Time
+    , yVar = Interest_score
+    , xLab = "time"
+    , yLab = "Science Interest"
+    , fillVar = sectionID
+    , fillLimits = c("RU02", "RU03")
+    , fillValues = c("lightblue", "magenta")
+  ) +
+  facet_wrap(
+    ~ sectionID
+  ) +
+  jitterGeom_shapeAes(
+    shape = labSection
+  ) +
+  scale_shape_manual(
+    limits = c("Other", "RU03")
+    , values = c(21, 23)
+  # ) +
+  # geom_point(
+  #   aes(group = (ID))
+  #   , position = position_dodge2(width = 0.2)
+  #   , shape = 21
+  # ) +
+  # geom_line(
+  #   aes(group = ID)
+  #   , position = position_dodge2(width = 0.2)
+  #   , alpha = 0.2
+  )
+```
+
+```{r}
+mixed(
+  Interest_score ~ sectionID * Time + (1|ID)
+  , data = scaleScores
+  , method = "KR"
+)
+```
+
+# Belonging
+No effect
+```{r}
+scaleScores %>%
+  filter(
+    !is.na(BelongingPre_score)
+  ) %>%
+  scatterPlot_general(
+    xVar = Time
+    , yVar = BelongingPre_score
+    , xLab = "time"
+    , yLab = "Academic Belonging"
+    , fillVar = sectionID
+    , fillLimits = c("RU02", "RU03")
+    , fillValues = c("lightblue", "magenta")
+  ) +
+  facet_wrap(
+    ~ sectionID
+  ) +
+  jitterGeom_shapeAes(
+    shape = labSection
+  ) +
+  scale_shape_manual(
+    limits = c("Other", "RU03")
+    , values = c(21, 23)
+  # ) +
+  # geom_point(
+  #   aes(group = (ID))
+  #   , position = position_dodge2(width = 0.2)
+  #   , shape = 21
+  # ) +
+  # geom_line(
+  #   aes(group = ID)
+  #   , position = position_dodge2(width = 0.2)
+  #   , alpha = 0.2
+  )
+```
+
+```{r}
+mixed(
+  BelongingPre_score ~ sectionID * Time + (1|ID)
+  , data = scaleScores
+  , method = "KR"
+)
+```
+# Correlation
+
+```{r}
+# contrasts(scaleScores$Time) <- contr.treatment(2)
+scaleScores_timeVal <- scaleScores %>%
+  mutate(
+    Time = ifelse(Time == "pre", 0, 1)
+  )
+```
+
+
+## Fixed and growth
+```{r}
+
+model <- mixed(
+  Growth_score ~ Fixed_score + (1 | ID),
+  data = scaleScores,
+  method = "KR"
+)
+
+summary(model$full_model)
+
+# lm_fixedGrowth <- lm(Growth_score ~ Fixed_score, data = scaleScores)
+# summary(lm_fixedGrowth)
+```
+## Fixed and self-efficacy
+```{r}
+
+model <- mixed(
+  SciEfficacy_score ~ Fixed_score * Time*sectionID + (1 | ID),
+  data = scaleScores,
+  method = "KR"
+)
+
+summary(model$full_model)
+```
+## Growth and self-efficacy
+```{r}
+
+model <- mixed(
+  SciEfficacy_score ~ Growth_score * Time*sectionID + (1 | ID),
+  data = scaleScores,
+  method = "KR"
+)
+
+summary(model$full_model)
+```
+## Fixed and mastery goals
+```{r}
+
+model <- mixed(
+  MasteryGoal_score ~ Fixed_score * Time*sectionID + (1 | ID),
+  data = scaleScores,
+  method = "KR"
+)
+
+summary(model$full_model)
+```
+## Growth and mastery goals
+```{r}
+scaleScores %>%
+  scatterPlot_general(
+    xVar = Growth_score
+    , xLab = "Growth Mindset"
+    , yVar = MasteryGoal_score
+    , yLab = "Mastery Goal Score"
+    , addMean = FALSE
+    , addSE = FALSE
+    , hideXAxisLab = FALSE
+    , fillVar = sectionID
+    , fillLimits = c("RU02", "RU03")
+    , fillValues = c("lightblue", "magenta")
+  ) +
+  geom_point(
+    aes(
+      fill = sectionID
+    )
+    , shape = 21
+  ) +
+  # scale_fill_manual(
+  #   limits = c("RU02", "RU03")
+  #   , values = c("lightblue", "magenta")
+  # ) +
+  geom_smooth(method = "lm", se = TRUE, color = "black") +
+  expand_limits(x = 0)
+```
+
+```{r}
+
+model <- mixed(
+  MasteryGoal_score ~ Growth_score * Time*sectionID + (1 | ID),
+  data = scaleScores,
+  method = "KR"
+)
+
+summary(model$full_model)
+```
+
+```{r}
+model <- mixed(
+  MasteryGoal_score ~ Growth_score + (1 | ID),
+  data = scaleScores,
+  method = "KR"
+)
+
+summary(model$full_model)
+```
+
+## Fixed and performance goals
+```{r}
+
+model <- mixed(
+  PerformanceGoal_score ~ Fixed_score * Time*sectionID + (1 | ID),
+  data = scaleScores,
+  method = "KR"
+)
+
+summary(model$full_model)
+```
+
+```{r}
+model <- mixed(
+  PerformanceGoal_score ~ Fixed_score + (1 | ID),
+  data = scaleScores,
+  method = "KR"
+)
+
+summary(model$full_model)
+```
+
+## Growth and performance goals
+```{r}
+scaleScores %>%
+  scatterPlot_general(
+    xVar = Growth_score
+    , xLab = "Growth Mindset"
+    , yVar = PerformanceGoal_score
+    , yLab = "Performance Goal Score"
+    , addMean = FALSE
+    , addSE = FALSE
+    , hideXAxisLab = FALSE
+  ) +
+  geom_point(
+    aes(
+      fill = sectionID
+    )
+    , shape = 21
+  ) +
+  scale_fill_manual(
+    limits = c("RU02", "RU03")
+    , values = c("lightblue", "magenta")
+  ) +
+  geom_smooth(method = "lm", se = TRUE, color = "black") +
+  expand_limits(x = 0)
+```
+
+```{r}
+
+model <- mixed(
+  PerformanceGoal_score ~ Growth_score * Time*sectionID + (1 | ID),
+  data = scaleScores,
+  method = "KR"
+)
+
+summary(model$full_model)
+```
+
+```{r}
+model <- mixed(
+  PerformanceGoal_score ~ Growth_score + (1 | ID),
+  data = scaleScores,
+  method = "KR"
+)
+
+summary(model$full_model)
+```
+
+
+## Efficacy and Mastery goals
+```{r}
+scaleScores %>%
+  scatterPlot_general(
+    xVar = SciEfficacy_score
+    , xLab = "Science Self-Efficacy Score"
+    , yVar = MasteryGoal_score
+    , yLab = "Mastery Goal Score"
+    , addMean = FALSE
+    , addSE = FALSE
+    , hideXAxisLab = FALSE
+    # , fillVar = sectionID
+    # , fillLimits = c("RU02", "RU03")
+    # , fillValues = c("lightblue", "magenta")
+  ) +
+  geom_point(
+    aes(
+      fill = sectionID
+    )
+    , shape = 21
+  ) +
+  scale_fill_manual(
+    limits = c("RU02", "RU03")
+    , values = c("lightblue", "magenta")
+  ) +
+  geom_smooth(method = "lm", se = TRUE, color = "grey30") +
+  expand_limits(x = 0) +
+  facet_wrap(
+    ~ Time
+  )
+```
+
+```{r}
+
+model <- mixed(
+  MasteryGoal_score ~ SciEfficacy_score * Time*sectionID + (1 | ID),
+  data = scaleScores,
+  method = "KR"
+)
+
+summary(model$full_model)
+
+contrasts(scaleScores$Time) <- contr.treatment(2)
+
+model_changeContrast <- mixed(
+  MasteryGoal_score ~ SciEfficacy_score * Time*sectionID + (1 | ID),
+  data = scaleScores,
+  method = "KR"
+)
+
+summary(model_changeContrast$full_model)
+
+model_timeVal <- mixed(
+  MasteryGoal_score ~ SciEfficacy_score * Time*sectionID + (1 | ID),
+  data = scaleScores_timeVal,
+  method = "KR"
+)
+
+summary(model_timeVal$full_model)
+```
+
+```{r}
+model <- mixed(
+  MasteryGoal_score ~ SciEfficacy_score*Time + (1 | ID),
+  data = scaleScores,
+  method = "KR"
+)
+
+summary(model$full_model)
+
+contrasts(scaleScores$Time)
+
+contrasts(scaleScores$Time) <- contr.treatment(2)
+
+model_changeContrast <- mixed(
+  MasteryGoal_score ~ SciEfficacy_score*Time + (1 | ID),
+  data = scaleScores,
+  method = "KR",
+  check_contrasts = FALSE
+)
+
+contrasts(scaleScores$Time)
+
+summary(model_changeContrast$full_model)
+
+model_timeVal <- mixed(
+  MasteryGoal_score ~ SciEfficacy_score*Time + (1 | ID),
+  data = scaleScores_timeVal,
+  method = "KR"
+)
+
+summary(model_timeVal$full_model)
+```
+
+```{r}
+summary(model$full_model)
+summary(model_changeContrast$full_model)
+summary(model_timeVal$full_model)
+```
+
+
+```{r}
+
+pred <- ggpredict(model$full_model, terms = c("SciEfficacy_score", "Time"))
+
+plot(pred)
+
+emmeans::emtrends(model$full_model, ~ Time, var = "SciEfficacy_score")
+
+pred_timeVal <- ggpredict(model_timeVal$full_model, terms = c("SciEfficacy_score", "Time"))
+
+plot(pred_timeVal)
+
+emmeans::emtrends(model_timeVal$full_model, ~ Time, var = "SciEfficacy_score")
+
+```
+
+```{r}
+model <- mixed(
+  MasteryGoal_score ~ SciEfficacy_score*Time + (1 | ID),
+  check_contrasts = FALSE,
+  data = scaleScores,
+  method = "KR"
+)
+
+summary(model$full_model)
+```
+
+```{r}
+
+scaleScores$SciEfficacy_score_centered <- scale(scaleScores$SciEfficacy_score, scale = FALSE)
+
+scaleScores %>%
+  relocate(
+    SciEfficacy_score_centered
+    , .before = SciEfficacy_score
+  )
+```
+
+
+
+## Efficacy and Performance goals
+```{r}
+scaleScores %>%
+  scatterPlot_general(
+    xVar = SciEfficacy_score
+    , xLab = "Science Self-Efficacy Score"
+    , yVar = PerformanceGoal_score
+    , yLab = "Performance Goal Score"
+    , addMean = FALSE
+    , addSE = FALSE
+    , hideXAxisLab = FALSE
+  ) +
+  geom_point(
+    aes(
+      fill = sectionID
+    )
+    , shape = 21
+  ) +
+  scale_fill_manual(
+    limits = c("RU02", "RU03")
+    , values = c("lightblue", "magenta")
+  ) +
+  geom_smooth(method = "lm", se = TRUE, color = "black") +
+  expand_limits(x = 0)
+```
+
+```{r}
+
+model <- mixed(
+  PerformanceGoal_score ~ SciEfficacy_score * Time*sectionID + (1 | ID),
+  data = scaleScores,
+  method = "KR"
+)
+
+summary(model$full_model)
+```
+
+```{r}
+model <- mixed(
+  PerformanceGoal_score ~ SciEfficacy_score + (1 | ID),
+  data = scaleScores,
+  method = "KR"
+)
+
+summary(model$full_model)
+```
+
+## Efficacy and Interest
+```{r}
+scaleScores %>%
+  scatterPlot_general(
+    xVar = SciEfficacy_score
+    , xLab = "Science Self-Efficacy Score"
+    , yVar = Interest_score
+    , yLab = "Science Interest Score"
+    , addMean = FALSE
+    , addSE = FALSE
+    , hideXAxisLab = FALSE
+  ) +
+  geom_point(
+    aes(
+      fill = sectionID
+    )
+    , shape = 21
+  ) +
+  scale_fill_manual(
+    limits = c("RU02", "RU03")
+    , values = c("lightblue", "magenta")
+  ) +
+  geom_smooth(method = "lm", se = TRUE, color = "black") +
+  expand_limits(x = 0)
+```
+
+```{r}
+
+model <- mixed(
+  Interest_score ~ SciEfficacy_score * Time*sectionID + (1 | ID),
+  data = scaleScores,
+  method = "KR"
+)
+
+summary(model$full_model)
+```
+
+```{r}
+model <- mixed(
+  Interest_score ~ SciEfficacy_score + (1 | ID),
+  data = scaleScores,
+  method = "KR"
+)
+
+summary(model$full_model)
+```
+
+## Interest and Mastery goals
+```{r}
+scaleScores %>%
+  scatterPlot_general(
+    xVar = Interest_score
+    , xLab = "Science Interest Score"
+    , yVar = MasteryGoal_score
+    , yLab = "Mastery Goal Score"
+    , addMean = FALSE
+    , addSE = FALSE
+    , hideXAxisLab = FALSE
+    # , fillVar = sectionID
+    # , fillLimits = c("RU02", "RU03")
+    # , fillValues = c("lightblue", "magenta")
+  ) +
+  geom_point(
+    aes(
+      fill = sectionID
+    )
+    , shape = 21
+  ) +
+  scale_fill_manual(
+    limits = c("RU02", "RU03")
+    , values = c("lightblue", "magenta")
+  ) +
+  geom_smooth(method = "lm", se = TRUE, color = "grey30") +
+  expand_limits(x = 0) +
+  facet_wrap(
+    ~ Time
+  )
+```
+
+```{r}
+
+model <- mixed(
+  MasteryGoal_score ~ Interest_score * Time*sectionID + (1 | ID),
+  data = scaleScores,
+  method = "KR"
+)
+
+summary(model$full_model)
+```
+
+```{r}
+model <- mixed(
+  MasteryGoal_score ~ Interest_score*Time + (1 | ID),
+  data = scaleScores,
+  method = "KR"
+)
+
+summary(model$full_model)
+```
+```{r}
+
+library(ggeffects)
+library(ggplot2)
+
+pred <- ggpredict(model$full_model, terms = c("Interest_score", "Time"))
+
+plot(pred)
+
+emmeans::emtrends(model, ~ Time, var = "Interest_score")
+
+```
+
+## Interest and Performance goals
+```{r}
+scaleScores %>%
+  scatterPlot_general(
+    xVar = Interest_score
+    , xLab = "Science Interest Score"
+    , yVar = PerformanceGoal_score
+    , yLab = "Performance Goal Score"
+    , addMean = FALSE
+    , addSE = FALSE
+    , hideXAxisLab = FALSE
+  ) +
+  geom_point(
+    aes(
+      fill = sectionID
+    )
+    , shape = 21
+  ) +
+  scale_fill_manual(
+    limits = c("RU02", "RU03")
+    , values = c("lightblue", "magenta")
+  ) +
+  geom_smooth(method = "lm", se = TRUE, color = "black") +
+  expand_limits(x = 0)
+```
+
+```{r}
+
+model <- mixed(
+  PerformanceGoal_score ~ Interest_score * Time*sectionID + (1 | ID),
+  data = scaleScores,
+  method = "KR"
+)
+
+summary(model$full_model)
+```
+
+```{r}
+model <- mixed(
+  PerformanceGoal_score ~ Interest_score + (1 | ID),
+  data = scaleScores,
+  method = "KR"
+)
+
+summary(model$full_model)
+```
+
+
+# Sum vs treatment coding
+If afex is not told "check_contrasts = FALSE" then it will check and change contrasts to be sum contrasts
+For looking at the model estimates for correlations, when using sum contrasts, it's comparing against a grand mean.
+Time pre = +1 and post = -1, so the interaction effect is half of the difference in slope between the two, and 
+if it's negative, then it means that the post has a larger slow than the pre. 
+
+For ANOVA-style output, the sum contrasts are important.
+Have to decide when doing the correlation-like output if treatment makes more sense. Depends on what I want to show.
+
+This should be at least approx step of how to add the model prediction lines to the raw data
+
+```{r eval=FALSE, include=FALSE}
+
+pred <- ggpredict(model, terms = c("SciEfficacy_score", "Time"))
+
+p +
+  geom_line(data = pred,
+            aes(x = x, y = predicted, color = group),
+            size = 1.2) +
+  geom_ribbon(data = pred,
+              aes(x = x, ymin = conf.low, ymax = conf.high, fill = group),
+              alpha = 0.2,
+              color = NA)
+
+```
+

@@ -4,4 +4,4 @@
 .RData
 .Ruserdata
 .Renviron
-.nb.html
+*.nb.html
