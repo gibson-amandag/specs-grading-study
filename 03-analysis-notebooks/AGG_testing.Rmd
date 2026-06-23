@@ -598,8 +598,8 @@ summary(model$full_model)
 ```{r}
 scaleScores %>%
   filter(
-      !( SciEfficacy_score == 5
-      & MasteryGoal_score == 5)
+      # !( SciEfficacy_score == 5
+      # & MasteryGoal_score == 5)
     )%>%
   scatterPlot_general(
     xVar = SciEfficacy_score
@@ -671,8 +671,8 @@ model <- mixed(
   MasteryGoal_score ~ SciEfficacy_score * Time*sectionID + (1 | ID),
   data = scaleScores %>%
     filter(
-      !( SciEfficacy_score == 5
-      & MasteryGoal_score == 5)
+      # !( SciEfficacy_score == 5
+      # & MasteryGoal_score == 5)
     ),
   method = "KR"
 )
@@ -1796,3 +1796,62 @@ Interest decreased in cluster 2 (diff from 4 + 1). Cluster 1 increased
 Mastery goals in science decreased in cluster 2 (diff from 4 and 1). 
 Performance goals increased in cluster 1, different from the other clusters
 Scientific self-efficacy increased in Cluster 1, different from 2 + 3
+
+# Correlation Matrix
+```{r}
+
+# install.packages("GGally")
+library(GGally)
+
+change_clusters %>%
+  select(Fixed, Growth, SciEfficacy, MasteryGoal,
+         PerformanceGoal, Interest, Belonging) %>%
+  ggcorr(label = TRUE, hjust = 1)
+
+```
+
+```{r}
+scaleScores %>%
+  select(Fixed_score_byAvg, Growth_score_byAvg, SciEfficacy_score_byAvg, MasteryGoal_score_byAvg,
+         PerformanceGoal_score_byAvg, Interest_score_byAvg, BelongingPre_score_byAvg, Time) %>%
+  rename(
+    Fixed = Fixed_score_byAvg
+    , Growth = Growth_score_byAvg
+    , SciEfficacy = SciEfficacy_score_byAvg
+    , MasteryGoal = MasteryGoal_score_byAvg
+    , PerformanceGoal = PerformanceGoal_score_byAvg
+    , Interest = Interest_score_byAvg
+    , Belonging = BelongingPre_score_byAvg
+  ) %>%
+  filter(
+    Time == "pre"
+  ) %>%
+  select(
+    -Time
+  ) %>%
+  ggcorr(label = TRUE, hjust = 1)
+```
+
+```{r}
+scaleScores %>%
+  select(Fixed_score_byAvg, Growth_score_byAvg, SciEfficacy_score_byAvg, MasteryGoal_score_byAvg,
+         PerformanceGoal_score_byAvg, Interest_score_byAvg, BelongingPre_score_byAvg, Time) %>%
+  rename(
+    Fixed = Fixed_score_byAvg
+    , Growth = Growth_score_byAvg
+    , SciEfficacy = SciEfficacy_score_byAvg
+    , MasteryGoal = MasteryGoal_score_byAvg
+    , PerformanceGoal = PerformanceGoal_score_byAvg
+    , Interest = Interest_score_byAvg
+    , Belonging = BelongingPre_score_byAvg
+  ) %>%
+  filter(
+    Time == "post"
+  ) %>%
+  select(
+    -Time
+  ) %>%
+  ggcorr(label = TRUE, hjust = 1)
+```
+
+
