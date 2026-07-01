@@ -66,5 +66,17 @@ flexSave <- function(
       units = units,
       ...
     )
+  } else if(fileType == "tiff" && compType == "mac"){
+    ggsave(
+      plot = plot,
+      filename = thisFileName,
+      device = fileType,
+      # type = "cairo", # may choose not to include this and just deal with crappy figure
+      path = thisPath,
+      width = width,
+      height = height,
+      units = units,
+      ...
+    )
   }
 }

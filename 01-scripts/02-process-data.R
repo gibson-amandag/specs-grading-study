@@ -66,10 +66,49 @@ duplicatePostIDs <- responses_df %>%
   ) %>%
   pull(ID)
 
+belongingPre_post_df <- responses_df %>%
+  filter(
+    Time == "post" & (ID %in% duplicatePostIDs)
+  ) %>%
+  select(
+    ID
+    ,Time
+    , Q5_25
+    , Q5_26
+    , Q5_27
+    , Q5_28
+    , Q5_29
+    , Q5_30
+  )
+
+demographics_df <- demographics_df %>%
+  filter(
+    ! ID %in% duplicatePostIDs
+  ) %>%
+  bind_rows(
+    responses_post_df %>%
+      select(
+        ID
+        , Q8:Q14
+      ) %>%
+      mutate(
+        type = "fullPost"
+        , Q11 = as.numeric(Q11)
+      )
+  )
+
+responses_post_df <- responses_post_df %>%
+  select(
+    -(Q8:Q14)
+  )
+
 
 combinedResponses <- responses_df %>%
   filter(
     !(Time == "post" & (ID %in% duplicatePostIDs))
+  ) %>%
+  bind_rows(
+    responses_post_df
   ) %>%
   left_join(
     demographics_df %>%
@@ -78,11 +117,21 @@ combinedResponses <- responses_df %>%
       )
     , by = "ID"
   ) %>%
-  mutate(
-    Q11 = as.character(Q11)
+  left_join(
+    belongingPre_post_df
+    , by = c("ID", "Time")
+    , suffix = c("", "_lookup")
   ) %>%
-  bind_rows(
-    responses_post_df
+  mutate(
+    Q5_25 = ifelse(is.na(Q5_25), Q5_25_lookup, Q5_25)
+    , Q5_26 = ifelse(is.na(Q5_26), Q5_26_lookup, Q5_26)
+    , Q5_27 = ifelse(is.na(Q5_27), Q5_27_lookup, Q5_27)
+    , Q5_28 = ifelse(is.na(Q5_28), Q5_28_lookup, Q5_28)
+    , Q5_29 = ifelse(is.na(Q5_29), Q5_29_lookup, Q5_29)
+    , Q5_30 = ifelse(is.na(Q5_30), Q5_30_lookup, Q5_30)
+  ) %>%
+  select(
+    -(ends_with("_lookup"))
   ) %>%
   rowwise() %>%
   mutate(
@@ -92,7 +141,7 @@ combinedResponses <- responses_df %>%
     sectionID = Q2
   ) %>%
   mutate(
-    sectionID = factor(sectionID, levels = c("RU02", "RU03"))
+    sectionID = factor(sectionID, levels = c("trad", "specs"))
     , Time = factor(Time, levels = c("pre", "post"))
   ) %>%
   left_join(
@@ -175,12 +224,15 @@ scaleScores <- combinedResponses %>%
     , MasteryGoal_score_byAvg = rowMeans(across(starts_with("MasteryGoal_") & !ends_with("_score")), na.rm = TRUE)
     , PerformanceGoal_score = rowSums(across(starts_with("PerformanceGoal_")), na.rm=FALSE)
     , PerformanceGoal_score_byAvg = rowMeans(across(starts_with("PerformanceGoal_") & !ends_with("_score")), na.rm = TRUE)
+    , PerformanceApproach_score_byAvg = rowMeans(across(c(PerformanceGoal_1, PerformanceGoal_2, PerformanceGoal_3, PerformanceGoal_4, PerformanceGoal_5)), na.rm = TRUE)
+    , PerformanceAvoid_score_byAvg = rowMeans(across(c(PerformanceGoal_6, PerformanceGoal_7, PerformanceGoal_8, PerformanceGoal_9)), na.rm = TRUE)
     , Interest_score = rowSums(across(starts_with("Interest_")), na.rm=FALSE)
     , Interest_score_byAvg = rowMeans(across(starts_with("Interest_") & !ends_with("_score")), na.rm = TRUE)
     , BelongingPre_score = rowSums(across(starts_with("BelongingPre_")), na.rm=FALSE)
     , BelongingPre_score_byAvg = rowMeans(across(starts_with("BelongingPre_") & !ends_with("_score")), na.rm = TRUE)
     , BelongingPost_score = rowSums(across(starts_with("BelongingPost_")), na.rm=FALSE)
     , BelongingPost_score_byAvg = rowMeans(across(starts_with("BelongingPost_") & !ends_with("_score")), na.rm = TRUE)
+    , BelongingPost_first6_score_byAvg = rowMeans(across(BelongingPost_1:BelongingPost_6), na.rm=TRUE)
     , ClassEngagement_score = rowSums(across(starts_with("ClassEngagement_")), na.rm=FALSE)
     , ClassEngagement_score_byAvg = rowMeans(across(starts_with("ClassEngagement_") & !ends_with("_score")), na.rm = TRUE)
     , .before = Fixed_1

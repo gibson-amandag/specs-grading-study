@@ -1854,4 +1854,361 @@ scaleScores %>%
   ggcorr(label = TRUE, hjust = 1)
 ```
 
+Are there any trends of lab sections with clusters?
+```{r}
+pca_df_change %>%
+  left_join(
+    scaleScores %>%
+      filter(
+        Time == "pre"
+      ) %>%
+      select(
+        ID, labSection
+      )
+    , by = "ID"
+  ) %>%
+  arrange(cluster, sectionID, labSection) %>%
+  group_by(
+    cluster, sectionID, labSection
+  ) %>%
+  summarize(n())
+```
+
+
+No difference with proportions fisher exact
+```{r}
+pca_df_change_withLab <- pca_df_change %>%
+  left_join(
+    scaleScores %>%
+      filter(
+        Time == "pre"
+      ) %>%
+      select(
+        ID, labSection
+      )
+    , by = "ID"
+  )
+
+table(pca_df_change_withLab$cluster, pca_df_change_withLab$labSection)
+
+
+fisher.test(table(pca_df_change_withLab$cluster, pca_df_change_withLab$labSection))
+```
+How much missing data?
+```{r}
+forPCA_wide_withMissing<- scaleScores %>%
+  select(
+    # -starts_with("BelongingPost_")
+      -starts_with("ClassEngagement_")
+      , -SC0
+      , -(type:ClassEngagement_5)
+      , BelongingPost_first6_score_byAvg
+    )%>%
+  select(
+    ID
+    , sectionID
+    , Time
+    , ends_with("_byAvg")
+  ) %>%
+  pivot_wider(
+    id_cols = c(ID, sectionID)
+    , names_from = Time
+    , values_from = where(is.numeric)
+  ) %>%
+  filter(
+    # if_all(where(is.numeric), ~!is.na(.))
+  )
+
+forPCA_change_withMissing <- forPCA_wide_withMissing %>%
+  mutate(
+    Fixed = Fixed_score_byAvg_post - Fixed_score_byAvg_pre
+    , Growth = Growth_score_byAvg_post - Growth_score_byAvg_pre
+    , SciEfficacy = SciEfficacy_score_byAvg_post - SciEfficacy_score_byAvg_pre
+    , MasteryGoal = MasteryGoal_score_byAvg_post - MasteryGoal_score_byAvg_pre
+    , PerformanceGoal = PerformanceGoal_score_byAvg_post - PerformanceGoal_score_byAvg_pre
+    , Interest = Interest_score_byAvg_post - Interest_score_byAvg_pre
+    , Belonging = BelongingPre_score_byAvg_post - BelongingPre_score_byAvg_pre
+    # , Belonging = ifelse(!is.na(BelongingPre_score_byAvg_post), BelongingPre_score_byAvg_post - BelongingPre_score_byAvg_pre, BelongingPost_first6_score_byAvg_post - BelongingPre_score_byAvg_pre
+    # )
+  ) %>%
+  select(
+    -(ends_with("_byAvg_pre"))
+    , -(ends_with("_byAvg_post"))
+  )
+
+forPCA_wide_withMissing %>%
+  filter(
+     if_any(where(is.numeric), ~is.na(.))
+  )
+forPCA_change_withMissing %>%
+  # filter(
+  #    if_any(where(is.numeric), ~is.na(.))
+  # ) %>%
+  filter(
+    ID %in% c(1224, 2458, 7046, 9688)
+  ) %>%
+  summarize(
+    Belonging = mean(Belonging, na.rm = TRUE)
+  )
+
+forPCA_change_withMissing %>%
+  group_by(
+    sectionID
+  ) %>%
+  summarize(
+    Belonging = mean(Belonging, na.rm = TRUE)
+  )
+  
+```
+
+```{r}
+forPCA_wide<-scaleScores %>%
+  select(
+    -starts_with("BelongingPost_")
+      , -starts_with("ClassEngagement_")
+      , -SC0
+      , -(type:ClassEngagement_5)
+      , BelongingPost_first6_score_byAvg
+    )%>%
+  select(
+    ID
+    , sectionID
+    , Time
+    , ends_with("_byAvg")
+  ) %>%
+  pivot_wider(
+    id_cols = c(ID, sectionID)
+    , names_from = Time
+    , values_from = where(is.numeric)
+  ) %>%
+  select(
+    -BelongingPost_first6_score_byAvg_pre
+  )
+
+forPCA_wide %>%
+  filter(
+    sectionID == "RU03"
+  ) %>%
+  summarize(
+    BelongingPrePostAvg = mean(BelongingPre_score_byAvg_post, na.rm = TRUE)
+    , BelongingPostPostAvg = mean(BelongingPost_first6_score_byAvg_post, na.rm = TRUE)
+  )
+
+forPCA_change <- forPCA_wide %>%
+  mutate(
+    Fixed = Fixed_score_byAvg_post - Fixed_score_byAvg_pre
+    , Growth = Growth_score_byAvg_post - Growth_score_byAvg_pre
+    , SciEfficacy = SciEfficacy_score_byAvg_post - SciEfficacy_score_byAvg_pre
+    , MasteryGoal = MasteryGoal_score_byAvg_post - MasteryGoal_score_byAvg_pre
+    , PerformanceGoal = PerformanceGoal_score_byAvg_post - PerformanceGoal_score_byAvg_pre
+    , Interest = Interest_score_byAvg_post - Interest_score_byAvg_pre
+    , Belonging = BelongingPre_score_byAvg_post - BelongingPre_score_byAvg_pre
+  ) %>%
+  select(
+    -(ends_with("_byAvg_pre"))
+    , -(ends_with("_byAvg_post"))
+  ) %>%
+  group_by(sectionID) %>%
+  mutate(
+    # use the section average for belonging change if missing
+    # Retains the ones who took the full intended post-survey, but probably more reflective than their
+    # post responses specific to Brain and Behavior
+    Belonging = ifelse(is.na(Belonging), mean(Belonging, na.rm = TRUE), Belonging)
+  ) %>%
+  ungroup() %>%
+  filter(
+    if_all(where(is.numeric), ~!is.na(.))
+  )
+
+forPCA_change %>%
+  filter(
+    sectionID == "RU03"
+  ) %>%
+  summarize(
+    BelongingMean = mean(Belonging, na.rm=TRUE)
+  ) %>% pull(BelongingMean)
+```
+```{r}
+change_clusters %>%
+  left_join(
+    combinedResponses %>%
+      select(
+        ID,
+        Q8:Q14
+      )
+    , by = "ID"
+  )
+```
+```{r}
+combinedResponses %>%
+  filter(
+    ID %in% duplicatePostIDs
+  )
+```
+
+```{r}
+responses_df %>%
+  filter(
+    !(Time == "post" & (ID %in% duplicatePostIDs))
+  ) %>%
+  left_join(
+    demographics_df %>%
+      select(
+        -Name
+      )
+    , by = "ID"
+  )
+```
+
+```{r}
+demographics_df %>%
+  filter(
+    ! ID %in% duplicatePostIDs
+  ) %>%
+  bind_rows(
+    responses_post_df %>%
+      select(
+        ID
+        , Q8:Q14
+      ) %>%
+      mutate(
+        type = "fullPost"
+        , Q11 = as.numeric(Q11)
+      )
+  )
+```
+
+
+```{r}
+change_clusters_withDemo <- change_clusters %>%
+  left_join(
+    demographics_df
+    , by = "ID"
+  ) %>%
+  mutate(
+    across(
+      starts_with("Q"),
+      ~ sapply(.x, convertNumToPhrase, questionType = getQType(cur_column(), numOrName = "num"))
+    )
+  ) %>%
+  mutate(
+    Q8 = ifelse(grepl(",", Q8), "Multiracial", Q8)
+  ) %>%
+  rename(
+    any_of(questionName_lookup)
+  ) %>%
+  mutate(
+    Gender = ifelse(Gender_1 %in% c("Female", "Male"), Gender_1, "Other or missing")
+    , Ethnicity = ifelse(is.na(Ethnicity_1), "Missing", Ethnicity_1)
+  )
+
+change_clusters_withDemo
+```
+
+
+```{r}
+clusterByGenderTable <- table(change_clusters_withDemo$cluster, change_clusters_withDemo$Gender)
+
+clusterByGenderTable
+fisher.test(clusterByGenderTable)
+```
+
+```{r}
+withDemo <- change_clusters_withDemo %>%
+  filter(
+    sectionID == "RU02"
+    # , Ethnicity != "Missing"
+  )
+clusterByEthnicityTable <- table(withDemo$cluster, withDemo$Ethnicity)
+
+clusterByEthnicityTable
+fisher.test(clusterByEthnicityTable)
+```
+
+```{r}
+change_clusters_withDemo %>%
+  filter(
+    # sectionID == "RU03"
+  ) %>%
+  group_by(
+    cluster
+    , sectionID
+    , Ethnicity
+  ) %>%
+  summarize(
+    n()
+  ) %>%
+  arrange(
+    cluster
+    , Ethnicity
+    , sectionID
+  ) %>%
+  filter(
+    cluster == 3
+  )
+```
+
+```{r eval=FALSE, include=FALSE}
+
+vars <- c("Fixed","Growth","SciEfficacy","MasteryGoal",
+          "PerformanceGoal","Interest","Belonging")
+
+for (v in vars) {
+  cat("\n====================\n")
+  cat("Variable:", v, "\n")
+  
+  
+  model <- mixed(
+    as.formula(paste(v, "~ cluster * Time + (1 | ID)")),
+    data = cluster_pre_post_clean
+  )
+  
+  em <- emmeans(model, ~ cluster * Time)
+  
+  print(multcomp::cld(em, Letters = letters))
+
+}
+
+```
+
+```{r eval=FALSE, include=FALSE}
+
+vars <- c("Fixed","Growth","SciEfficacy","MasteryGoal",
+          "PerformanceGoal","Interest","Belonging")
+
+for (v in vars) {
+  cat("\n====================\n")
+  cat("Variable:", v, "\n")
+  
+  model <- mixed(
+    as.formula(paste(v, "~ cluster * Time + (1 | ID)")),
+    data = cluster_pre_post_clean
+  )
+  
+  # ✅ Print model results (ANOVA table)
+  print(model$anova_table)
+  
+  # ✅ Extract p-values
+  p_cluster <- model$anova_table["cluster", "Pr(>F)"]
+  p_time <- model$anova_table["Time", "Pr(>F)"]
+  p_interaction <- model$anova_table["cluster:Time", "Pr(>F)"]
+
+  
+  if (p_interaction < 0.05) {
+    cat("\nInteraction significant → simple effects\n")
+    print(emmeans(model, pairwise ~ cluster | Time))
+    print(emmeans(model, pairwise ~ Time | cluster))
+    
+  } else if (p_cluster < 0.05) {
+    cat("\nCluster main effect → pairwise cluster\n")
+    print(emmeans(model, pairwise ~ cluster))
+    
+  } else if (p_time < 0.05) {
+    cat("\nTime main effect → pairwise time\n")
+    print(emmeans(model, pairwise ~ Time))
+  }
+
+}
+
+```
 
