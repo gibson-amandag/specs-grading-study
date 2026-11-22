@@ -16,6 +16,12 @@ source(file.path(scriptsFolder, "02-load-data-file.R"))
 source(file.path(scriptsFolder, "02-process-data.R"))
 ```
 
+```{r}
+scales_lmms <- scaleScores %>%
+  run_all_section_time_LMMs()
+```
+
+
 # Mastery Goals
 
 ## Graph
@@ -45,7 +51,7 @@ Fig1_MasteryGoals <- scaleScores %>%
     theme(
       legend.position = "none"
     )+
-    textTheme(size = 36)+
+    textTheme(size = 11)+
     boxTheme() + 
     addMeanHorizontalBar(
       barPosition = position_dodge2(width = 0.3)
@@ -72,12 +78,28 @@ Fig1_MasteryGoals
 
 Endorsement of mastery goals in science decreases at the end of the course
 ```{r}
-mixed(
+masteryGoals_lmm <- mixed(
   MasteryGoal_score_byAvg ~ sectionID * Time + (1|ID)
   , data = scaleScores
   , method = "KR"
 )
+
+masteryGoals_lmm
 ```
+
+```{r}
+masteryGoals_lmm_tbl <- masteryGoals_lmm$anova_table %>%
+  simplifyLMMOutput()
+
+masteryGoals_lmm_tbl
+```
+```{r}
+masteryGoals_lmm_flx <- masteryGoals_lmm_tbl %>%
+  makeManuscriptFlexTable()
+
+masteryGoals_lmm_flx
+```
+
 # Correlation Matrix
 
 ## Pre
