@@ -4,21 +4,86 @@ output: html_notebook
 ---
 
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 source("./01-scripts/01-set-up.R")
 ```
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 source(file.path(scriptsFolder, "02-load-data-file.R"))
 ```
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 source(file.path(scriptsFolder, "02-process-data.R"))
+```
+
+```{r}
+doc.type <- knitr::opts_knit$get('rmarkdown.pandoc.to')
+set_flextable_defaults(
+  font.family = "Arial"
+  , font.size = 11
+)
+
+doc <- read_docx("./manuscriptTemplate.docx")
+pairsDoc <- read_docx("./manuscriptTemplate.docx")
+
+saveTables <- function(){
+  print(doc, target = file.path(outputFolder, "reports", "FUN_manuscript_tables.docx"))
+  print(pairsDoc, target = file.path(outputFolder, "reports", "FUN_manuscript_tables_pairs.docx"))
+}
+```
+
+# Column Sizes
+```{r}
+# JNeuro values (in cm)
+twoCols <- 17.4
+oneAndHalfCols <- 11.5
+oneCol <- 8.5
+
+# # eNeuro values (in cm)
+# twoCols <- 17.6
+# oneAndHalfCols <- 11.6
+# oneCol <- 8.5
+
+quarterLength <- 16.7/4
+thirdLength <- 16.7/3
+halfLength <- 16.7/2
+twoThirdsLength <- 16.7*2/3
+threeQuarterLength <- 16.7*3/4
+fullLength <- 16.7
+
+manuscriptFolder <- file.path(plotOutputFolder, "manuscript")
+```
+
+```{r}
+set_null_device("png")
+```
+
+
+
+# Scales LMMs - section * time
+```{r include=FALSE}
+tableNum <- 2
 ```
 
 ```{r}
 scales_lmms <- scaleScores %>%
   run_all_section_time_LMMs()
+```
+
+```{r}
+sectionTime_flx <- scales_lmms %>%
+  makeSectionTimeLMM_flextable()
+```
+
+```{r}
+tableCaption <- "Scales LMMs - section * time"
+
+tbl <- sectionTime_flx
+tbl
+```
+
+```{r include=FALSE}
+doc <- addTableAndCaptionToDoc(tbl, tableCaption, tableNum, doc)
 ```
 
 
@@ -78,28 +143,8 @@ Fig1_MasteryGoals
 
 Endorsement of mastery goals in science decreases at the end of the course
 ```{r}
-masteryGoals_lmm <- mixed(
-  MasteryGoal_score_byAvg ~ sectionID * Time + (1|ID)
-  , data = scaleScores
-  , method = "KR"
-)
-
-masteryGoals_lmm
+scales_lmms$masteryGoals_lmm
 ```
-
-```{r}
-masteryGoals_lmm_tbl <- masteryGoals_lmm$anova_table %>%
-  simplifyLMMOutput()
-
-masteryGoals_lmm_tbl
-```
-```{r}
-masteryGoals_lmm_flx <- masteryGoals_lmm_tbl %>%
-  makeManuscriptFlexTable()
-
-masteryGoals_lmm_flx
-```
-
 # Correlation Matrix
 
 ## Pre
@@ -125,15 +170,16 @@ Fig2_PreCorrMatrix <- scaleScores %>%
   ggcorr(
     label = TRUE
     , hjust = 1
-    , label_size = 8
-    , size = 11
+    , label_size = 2.5
+    , size = 3
     , label_alpha = TRUE
     , layout.exp = 1
-    , legend.size = 26
+    , legend.size = 10
   ) +
   guides(
     fill = guide_colorbar(
-      barheight = unit(5, "in")
+      barheight = unit(1, "in")
+      , barwidth = unit(0.1, "in")
     )
   )
 
@@ -163,15 +209,16 @@ Fig3_PostCorrMatrix <- scaleScores %>%
   ggcorr(
     label = TRUE
     , hjust = 1
-    , label_size = 8
-    , size = 11
+    , label_size = 2.5
+    , size = 3
     , label_alpha = TRUE
     , layout.exp = 1
-    , legend.size = 26
+    , legend.size = 10
   ) +
   guides(
     fill = guide_colorbar(
-      barheight = unit(5, "in")
+      barheight = unit(1, "in")
+      , barwidth = unit(0.1, "in")
     )
   )
 
@@ -189,22 +236,35 @@ scaleScores_timeVal <- scaleScores %>%
 
 # Interactions
 
-## Sci Efficacy vs Mastery Goals
-### Model
+```{r}
+mastery_scaleByTime_lmms <- scaleScores_timeVal %>%
+  run_scaleByTime_LMMs()
+
+mastery_scaleByTime_flx <- mastery_scaleByTime_lmms %>%
+  makeScalesTime_flexTable()
+```
+```{r include=FALSE}
+tableNum <- 3
+```
 
 ```{r}
-model_masteryBySciEff <- mixed(
-  MasteryGoal_score_byAvg ~ SciEfficacy_score_byAvg*Time + (1 | ID),
-  check_contrasts = FALSE,
-  data = scaleScores_timeVal,
-  method = "KR"
-)
-summary(model_masteryBySciEff$full_model)
+tableCaption <- "Mastery goals by scale and time"
+
+tbl <- mastery_scaleByTime_flx
+tbl
 ```
+```{r include=FALSE}
+doc <- addTableAndCaptionToDoc(tbl, tableCaption, tableNum, doc)
+```
+
+## Sci Efficacy vs Mastery Goals
 
 ### Plot of model
 ```{r}
-pred_masteryBySciEff <- ggpredict(model_masteryBySciEff$full_model, terms = c("SciEfficacy_score_byAvg", "Time"))
+pred_masteryBySciEff <- ggpredict(mastery_scaleByTime_lmms$bySciEff$full_model, terms = c("SciEfficacy_score_byAvg", "Time"))
+```
+
+```{r}
 
 Fig4_MasterybySciEff <- pred_masteryBySciEff %>%
   ggplot( 
@@ -241,9 +301,9 @@ Fig4_MasterybySciEff <- pred_masteryBySciEff %>%
     ) +
     boxTheme()+
     theme_pubr()+
-    textTheme(size = 36) +
+    textTheme(size = 11) +
     theme(
-      legend.key.width = unit(1, "in")
+      legend.key.width = unit(.5, "in")
     )
 
 Fig4_MasterybySciEff
@@ -252,22 +312,9 @@ Fig4_MasterybySciEff
 
 
 ## Interest vs Mastery Goals
-
-### Model
-
-```{r}
-model_masteryByInterest <- mixed(
-  MasteryGoal_score_byAvg ~ Interest_score_byAvg*Time + (1 | ID),
-  check_contrasts = FALSE,
-  data = scaleScores_timeVal,
-  method = "KR"
-)
-summary(model_masteryByInterest$full_model)
-```
-
 ### Plot of model
 ```{r}
-pred_masteryByInterest <- ggpredict(model_masteryByInterest$full_model, terms = c("Interest_score_byAvg", "Time"))
+pred_masteryByInterest <- ggpredict(mastery_scaleByTime_lmms$byInterest$full_model, terms = c("Interest_score_byAvg", "Time"))
 
 Fig5_masteryByInterest <- pred_masteryByInterest %>%
   ggplot( 
@@ -304,14 +351,16 @@ Fig5_masteryByInterest <- pred_masteryByInterest %>%
     ) +
     boxTheme()+
     theme_pubr()+
-    textTheme(size = 36)+
+    textTheme(size = 11)+
     expand_limits(x = 1, y = 1) +
     theme(
-      legend.key.width = unit(1, "in")
+      legend.key.width = unit(.5, "in")
     )
 
 Fig5_masteryByInterest
 ```
+
+
 # Principle Component Analysis
 Make wide form
 ```{r}
@@ -325,11 +374,12 @@ forPCA_wide<-scaleScores %>%
   select(
     ID
     , sectionID
+    , labSection
     , Time
     , ends_with("_byAvg")
   ) %>%
   pivot_wider(
-    id_cols = c(ID, sectionID)
+    id_cols = c(ID, sectionID, labSection)
     , names_from = Time
     , values_from = where(is.numeric)
   )
@@ -368,7 +418,7 @@ forPCA_change
 ## Create PCA results
 
 ```{r}
-pca_res_change <- prcomp(forPCA_change %>% select(-ID, -sectionID), center=TRUE, scale.=TRUE)
+pca_res_change <- prcomp(forPCA_change %>% select(-ID, -sectionID, -labSection), center=TRUE, scale.=TRUE)
 ```
 
 ## Decide on clusters
@@ -431,6 +481,7 @@ pca_df_change <- data.frame(
   , PC3 = pca_res_change$x[,3]
   , ID = forPCA_change$ID
   , sectionID = forPCA_change$sectionID
+  , labSection = forPCA_change$labSection
   , cluster = factor(clusters_change)
 ) 
 ```
@@ -495,6 +546,13 @@ table(pca_df_change$cluster, pca_df_change$sectionID)
 
 fisher.test(table(pca_df_change$cluster, pca_df_change$sectionID))
 ```
+Lab section - no differences at all. 
+```{r eval=FALSE, include=FALSE}
+table(pca_df_change$cluster, pca_df_change$labSection)
+
+
+fisher.test(table(pca_df_change$cluster, pca_df_change$labSection))
+```
 ### Plot
 ```{r}
 Fig6_clusterBySection <- pca_df_change %>%
@@ -508,7 +566,7 @@ Fig6_clusterBySection <- pca_df_change %>%
   geom_bar(
     position = "fill", color = "black"
   ) +
-  geom_text(aes(label = after_stat(count)), stat = "count", vjust = 1.3, colour = "white", position = "fill", size=12)+
+  geom_text(aes(label = after_stat(count)), stat = "count", vjust = 1.3, colour = "white", position = "fill", size=4)+
     labs(y = "% in each cluster") + 
     scale_y_continuous(
       breaks = c(0, 0.25, 0.5, 0.75, 1)
@@ -516,16 +574,18 @@ Fig6_clusterBySection <- pca_df_change %>%
       # labels = scales::percent
     )+
     theme_pubr() +
-    textTheme(size = 36, boldXText = TRUE)+
+    textTheme(size = 11, boldXText = TRUE)+
     boxTheme()+
     scale_fill_manual(
       values = c("#1b9e77", "#d95f02", "#7570b3")
-      , guide = "none"
+      # , guide = "none"
     )+
     theme(
-      legend.position = "none",
-      axis.title.x = element_blank()
-    )
+      # legend.position = "none",
+      legend.position = "right",
+      # axis.title.x = element_blank()
+    ) +
+    labs(x = "section")
 
 Fig6_clusterBySection
 ```
@@ -559,6 +619,7 @@ change_clusters <- pca_df_change %>%
 change_clusters
 ```
 
+### Plot
 
 ```{r}
 Fig7_changeInResp <- change_clusters %>%
@@ -570,9 +631,10 @@ Fig7_changeInResp <- change_clusters %>%
     resp_scale = case_when(
       resp_scale == "MasteryGoal" ~ "Mastery Goal"
       , resp_scale == "PerformanceGoal" ~ "Performance Goal"
+      , resp_scale == "SciEfficacy" ~ "Sci Efficacy"
       , TRUE ~ resp_scale
     )
-    , resp_scale = factor(resp_scale, levels = c("Fixed", "Growth", "Mastery Goal", "Performance Goal", "Interest", "SciEfficacy", "Belonging"))
+    , resp_scale = factor(resp_scale, levels = c("Fixed", "Growth", "Mastery Goal", "Performance Goal", "Interest", "Sci Efficacy", "Belonging"))
   ) %>%
   ggplot(
     aes(
@@ -598,7 +660,7 @@ Fig7_changeInResp <- change_clusters %>%
     barPosition = position_dodge(width = 0.7)
     # , color = resp_scale
   ) +
-  textTheme(size = 36) +
+  textTheme(size = 11) +
   boxTheme() +
   addMeanSE_vertBar(
     barPosition = position_dodge(width = 0.7)
@@ -612,10 +674,10 @@ Fig7_changeInResp <- change_clusters %>%
   theme(
     legend.position = "right"
     , legend.text = element_text(
-        size = 36
+        size = 9
         # , margin = margin(b = 50)
       )
-    , legend.key.spacing.y = unit(0.4, "in")
+    # , legend.key.spacing.y = unit(0.2, "in")
     , legend.title = element_text(face = "bold")
   ) +
   guides(
@@ -632,9 +694,23 @@ manova_res <- manova(
   data = change_clusters
 )
 
-summary(manova_res)
+# summary(manova_res)
 summary.aov(manova_res)
 ```
+
+```{r eval=FALSE, include=FALSE}
+aov_list <- summary.aov(manova_res)
+
+combined_aov <- purrr::imap_dfr(
+  aov_list,
+  ~ as.data.frame(.x) |>
+    tibble::rownames_to_column("Effect") |>
+    dplyr::mutate(Scale = .y, .before = 1)
+)
+
+combined_aov
+```
+
 
 ### emmeans
 
@@ -699,71 +775,75 @@ cluster_pre_post_long <- cluster_pre_post %>%
       resp_scale == "MasteryGoal" ~ "Mastery\nGoal"
       , resp_scale == "PerformanceGoal" ~ "Performance\nGoal"
       , resp_scale == "BelongingPre" ~ "Belonging"
+      , resp_scale == "SciEfficacy" ~ "Sci Efficacy"
       , TRUE ~ resp_scale
     )
-    , resp_scale = factor(resp_scale, levels = c("Fixed", "Growth", "Mastery\nGoal", "Performance\nGoal", "Interest", "SciEfficacy", "Belonging"))
+    , resp_scale = factor(resp_scale, levels = c("Fixed", "Growth", "Mastery\nGoal", "Performance\nGoal", "Interest", "Sci Efficacy", "Belonging"))
   ) %>%
   filter(
     !is.na(value)
   )
 
-Fig8a_prePost_scores <- cluster_pre_post_long %>%
-  filter(
-    resp_scale %in% c("Fixed", "Growth")
-  ) %>%
-  ggplot(
-    aes(
-      x = cluster
-      , y = value
-      , fill = Time
-      , color = cluster
-      # , group = Time
-    )
-  ) +
-  # geom_beeswarm(
-  #   dodge.width = 0.7
-  #   , cex = 0.5
-  #   , alpha = 0.3
-  #   , aes(
-  #     # shape = sectionID
-  #   )
-  # ) +
-  geom_violin(
-    position = position_dodge(width = 0.7)
-    , alpha = 0.3
-  ) +
-  theme_pubr() +
-  textTheme(size = 36) +
-  boxTheme()+
-  addMeanHorizontalBar(
-    barPosition = position_dodge(width = 0.7)
-    , meanColor = "black"
-  ) +
-  addMeanSE_vertBar(
-    barPosition = position_dodge(width = 0.7)
-    , barColor = "black"
-  ) +
-  labs(
-    y = "average score"
-  ) +
-  scale_fill_manual(
-    values = c(NA, "grey30")
-  )+
-  scale_color_manual(
-    values = c("#1b9e77", "#d95f02", "#7570b3")
-    , guide = "none"
-  )+
-  facet_wrap(
-    ~resp_scale
-    , nrow = 1
-    # , scales = "free"
-  ) +
-  expand_limits(y = 7) +
-  scale_y_continuous(breaks = c(1:6))
+# Fig8a_prePost_scores <- cluster_pre_post_long %>%
+#   filter(
+#     resp_scale %in% c("Fixed", "Growth")
+#   ) %>%
+#   ggplot(
+#     aes(
+#       x = cluster
+#       , y = value
+#       , fill = Time
+#       , color = cluster
+#       # , group = Time
+#     )
+#   ) +
+#   # geom_beeswarm(
+#   #   dodge.width = 0.7
+#   #   , cex = 0.5
+#   #   , alpha = 0.3
+#   #   , aes(
+#   #     # shape = sectionID
+#   #   )
+#   # ) +
+#   geom_violin(
+#     position = position_dodge(width = 0.7)
+#     , alpha = 0.3
+#   ) +
+#   theme_pubr() +
+#   textTheme(size = 36) +
+#   boxTheme()+
+#   addMeanHorizontalBar(
+#     barPosition = position_dodge(width = 0.7)
+#     , meanColor = "black"
+#   ) +
+#   addMeanSE_vertBar(
+#     barPosition = position_dodge(width = 0.7)
+#     , barColor = "black"
+#   ) +
+#   labs(
+#     y = "average score"
+#   ) +
+#   scale_fill_manual(
+#     values = c(NA, "grey30")
+#   )+
+#   scale_color_manual(
+#     values = c("#1b9e77", "#d95f02", "#7570b3")
+#     , guide = "none"
+#   )+
+#   facet_wrap(
+#     ~resp_scale
+#     , nrow = 1
+#     # , scales = "free"
+#   ) +
+#   expand_limits(y = 7) +
+#   scale_y_continuous(breaks = c(1:6))
+```
 
+
+```{r}
 Fig8b_prePost_scores <- cluster_pre_post_long %>%
   filter(
-    resp_scale %in% c("Mastery\nGoal", "Performance\nGoal", "Interest", "SciEfficacy", "Belonging")
+    resp_scale %in% c("Fixed", "Growth", "Mastery\nGoal", "Performance\nGoal", "Interest", "Sci Efficacy", "Belonging")
   ) %>%
   ggplot(
     aes(
@@ -777,6 +857,7 @@ Fig8b_prePost_scores <- cluster_pre_post_long %>%
   geom_violin(
     position = position_dodge(width = 0.7)
     , alpha = 0.3
+    , linewidth = 0.3
   ) +
   # geom_boxplot(
   #   position = position_dodge(width = 0.7)
@@ -789,7 +870,7 @@ Fig8b_prePost_scores <- cluster_pre_post_long %>%
   #   )
   # ) +
   theme_pubr() +
-  textTheme(size = 36) +
+  textTheme(size = 11) +
   boxTheme()+
   addMeanHorizontalBar(
     barPosition = position_dodge(width = 0.7)
@@ -804,20 +885,28 @@ Fig8b_prePost_scores <- cluster_pre_post_long %>%
   ) +
   scale_fill_manual(
     values = c(NA, "grey30")
+    , 
   )+
   scale_color_manual(
     values = c("#1b9e77", "#d95f02", "#7570b3")
-    , guide = "none"
+    # , guide = "none"
   )+
   facet_wrap(
     ~resp_scale
     , nrow = 1
     # , scales = "free"
   ) +
-  expand_limits(y=6) +
-  scale_y_continuous(breaks = c(1:5))
+  expand_limits(y=7) +
+  scale_y_continuous(breaks = c(1:6)) +
+  theme(
+    legend.position = "bottom"
+    , legend.margin = margin(t = -5)
+    , legend.key.height = unit(.15, "in")
+    , strip.clip = "off"
+    , strip.text = element_text(size = 9)
+  )
 
-Fig8a_prePost_scores
+# Fig8a_prePost_scores
 Fig8b_prePost_scores
 ```
 ```{r}
@@ -884,91 +973,195 @@ for (v in vars) {
 
 ```
 
+### output flextable
 
 ```{r}
-Fig1_MasteryGoals
-Fig2_PreCorrMatrix
-Fig3_PostCorrMatrix
-Fig4_MasterybySciEff
-Fig5_masteryByInterest
-Fig6_clusterBySection
-Fig7_changeInResp
-Fig8a_prePost_scores
-Fig8b_prePost_scores
+vars <- c(
+  "Fixed",
+  "Growth",
+  "MasteryGoal",
+  "PerformanceGoal",
+  "SciEfficacy",
+  "Interest",
+  "Belonging"
+)
+
+models <- list()
+
+for(v in vars){
+
+  models[[v]] <- mixed(
+    as.formula(
+      paste(v, "~ cluster * Time + (1|ID)")
+    ),
+    data = cluster_pre_post_clean
+  )
+
+}
+
+omnibus_flx <- makeOmnibusLMM_flextable(models)
+
+omnibus_flx
 ```
+```{r}
+tableNum <- 4
+```
+
+
+```{r}
+tableCaption <- "Omnibus LMMs - cluster * time"
+
+tbl <- omnibus_flx
+tbl
+```
+
+```{r include=FALSE}
+doc <- addTableAndCaptionToDoc(tbl, tableCaption, tableNum, doc)
+```
+
+
+```{r}
+time_flx <-
+  makeClusterWithinTime_flextable(models)
+
+time_flx
+```
+```{r}
+tableNum <- 5
+```
+
+
+```{r}
+tableCaption <- "Within time"
+
+tbl <- time_flx
+tbl
+```
+
+```{r include=FALSE}
+doc <- addTableAndCaptionToDoc(tbl, tableCaption, tableNum, doc)
+```
+
+
+```{r}
+cluster_flx <-
+  makeTimeWithinCluster_flextable(models)
+
+cluster_flx
+```
+```{r}
+tableNum <- 6
+```
+
+
+```{r}
+tableCaption <- "Within cluster"
+
+tbl <- cluster_flx
+tbl
+```
+
+```{r include=FALSE}
+doc <- addTableAndCaptionToDoc(tbl, tableCaption, tableNum, doc)
+```
+
+# Manuscript 
+
+## Figure mastery goals
 
 ```{r}
 flexSave(
-  "Fig1_MasteryGoals"
+   "figMasteryPlot"
   , plot = Fig1_MasteryGoals
-  , width = 6
-  , height = 4.5
-  , fileType = "pdf"
-)
-
-flexSave(
-  "Fig2_PreCorrMatrix"
-  , plot = Fig2_PreCorrMatrix
-  , width = 8.5
-  , height = 6.3
-  , fileType = "pdf"
-)
-
-flexSave(
-  "Fig3_PostCorrMatrix"
-  , plot = Fig3_PostCorrMatrix
-  , width = 8.5
-  , height = 6.3
-  , fileType = "pdf"
-)
-
-flexSave(
-  "Fig4_MasterybySciEff"
-  , plot = Fig4_MasterybySciEff
-  , width = 8.5
-  , height = 6.3
-  , fileType = "pdf"
-)
-
-flexSave(
-  "Fig5_masteryByInterest"
-  , plot = Fig5_masteryByInterest
-  , width = 8.5
-  , height = 6.3
-  , fileType = "pdf"
-)
-
-flexSave(
-  "Fig6_clusterBySection"
-  , plot = Fig6_clusterBySection
-  , width = 7
-  , height= 7.25
-  , fileType = "pdf"
-)
-
-flexSave(
-  "Fig7_changeInResp"
-  , plot = Fig7_changeInResp
-  , width = 26.5
-  , height = 8
-  , fileType = "pdf"
-)
-
-flexSave(
-  "Fig8a_prePost_scores"
-  , plot = Fig8a_prePost_scores
-  , width = 8.5
-  , height = 8
-  , fileType = "pdf"
-)
-
-flexSave(
-  "Fig8b_prePost_scores"
-  , plot = Fig8b_prePost_scores + theme(strip.clip = "off")
-  , width = 17.5
-  , height = 8
-  , fileType = "pdf"
+  , width = oneCol
+  , height = thirdLength
+  , units = "cm"
+  , filePath = manuscriptFolder
 )
 ```
 
+## Figure Mastery - correlation plots
 
+```{r}
+figMastery_corrPlots<- plot_grid(
+  plot_grid(
+    Fig2_PreCorrMatrix
+    , Fig3_PostCorrMatrix
+    , align = "h"
+    , axis = "b"
+    , nrow = 1
+    , labels = c("A", "B")
+    , label_fontfamily = "Arial"
+    , label_size = 11
+  )
+  , plot_grid(
+    Fig4_MasterybySciEff
+    , Fig5_masteryByInterest
+    , align = "h"
+    , axis = "b"
+    , nrow = 1
+    , labels = c("C", "D")
+    , label_fontfamily = "Arial"
+    , label_size = 11
+  )
+  , nrow = 2
+  , rel_heights = c(2, 3)
+)
+
+figMastery_corrPlots
+```
+
+```{r}
+flexSave(
+  "figMastery_corrPlots"
+  , plot = figMastery_corrPlots
+  , width = twoCols
+  , height = twoThirdsLength
+  , units = "cm"
+  , filePath = manuscriptFolder
+)
+```
+
+## Figure - cluster changes and pre/post
+
+```{r}
+figClusters <- plot_grid(
+  Fig7_changeInResp
+  , Fig8b_prePost_scores
+  , align = "v"
+  , axis = "l"
+  , nrow = 2
+  , labels = c("A", "B")
+  , rel_heights = c(3, 4)
+)
+
+figClusters
+```
+
+```{r}
+flexSave(
+  "figClusters"
+  , plot = figClusters
+  , width = twoCols
+  , height = fullLength - 0.3
+  , units = "cm"
+  , filePath = manuscriptFolder
+)
+
+twoCols
+fullLength-0.3
+```
+
+
+## Figure - cluster by section
+
+```{r}
+flexSave(
+   "figClusterBySection"
+  , plot = Fig6_clusterBySection
+  , width = oneCol
+  , height = thirdLength
+  , units = "cm"
+  , filePath = manuscriptFolder
+)
+```

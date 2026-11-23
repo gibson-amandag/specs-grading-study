@@ -67,6 +67,11 @@ subTimeInRowNames <- function(tbl) {
   return(tbl)
 }
 
+subClusterInRowNames <- function(tbl) {
+  row.names(tbl) <- gsub("Cluster", "cluster", row.names(tbl))
+  return(tbl)
+}
+
 formatPCol <- function(df, pCol = p){
   pColAsText = deparse(substitute(pCol))
   df <- df %>%
@@ -105,7 +110,11 @@ simplifyLMMOutput <- function(anovaTable){
         ifelse(
           variable == "section:time"
           , "section * time"
-          , variable
+          , ifelse(
+            variable == "cluster:time"
+            , "cluster * time"
+            , variable
+          )
         )
     ) %>%
     mutate(

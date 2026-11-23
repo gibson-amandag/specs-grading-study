@@ -43,7 +43,7 @@ flexSave <- function(
       units = units,
       ...
     )
-  } else if(fileType == "png" && compType == "mac"){
+  } else if((fileType == "png" | fileType == "svg") && compType == "mac"){
     ggsave(
       plot = plot,
       filename = thisFileName,
